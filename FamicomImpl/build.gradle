@@ -1,0 +1,18 @@
+apply plugin: 'java'
+apply plugin: 'application'
+
+compileJava {
+    options.encoding = 'UTF-8'
+}
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+mainClassName = 'famicom.impl.FamicomMain'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile project(':FamicomApi')
+}

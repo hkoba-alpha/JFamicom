@@ -1,0 +1,4 @@
+//rootProject.name = 'FamicomImpl'
+//rootProject.projectDir = new File(settingsDir, 'FamicomImpl')
+
+include 'FamicomApi', 'FamicomImpl'
