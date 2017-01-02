@@ -12,5 +12,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Event(Event.EventType.SKIP_STATE)
 public @interface SkipState {
-    String state() default "";
+    String state() default Event.ALL_STATE;
 }

@@ -12,4 +12,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Event(value = Event.EventType.PRE_RESET, reverse = true)
 public @interface PreReset {
+    String state() default Event.ALL_STATE;
 }

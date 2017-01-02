@@ -40,9 +40,6 @@ public class AnnotationUtil {
         List<Map<String, Object>> resultList = new ArrayList<>();
 
         try {
-            for (Field fld: annotationType.getDeclaredFields()) {
-                System.out.println("Field:" + fld.getName());
-            }
             checkAnnotation(annotations, annotationType, resultList, new HashMap<>());
         } catch (IllegalAccessException e) {
             e.printStackTrace();

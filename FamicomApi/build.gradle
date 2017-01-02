@@ -1,3 +1,6 @@
+group 'jfamicom-api'
+version '1.0-SNAPSHOT'
+
 apply plugin: 'java'
 
 compileJava {
@@ -11,4 +14,5 @@ repositories {
 }
 
 dependencies {
+
 }

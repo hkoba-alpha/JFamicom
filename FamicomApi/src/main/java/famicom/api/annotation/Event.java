@@ -11,6 +11,11 @@ import java.lang.annotation.Target;
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Event {
+    /**
+     * 全ての状態
+     */
+    public static final String ALL_STATE = "**__all__**";
+
     public enum EventType {
         INITIALIZE,
         PRE_RESET,
@@ -27,7 +32,7 @@ public @interface Event {
     }
 
     EventType value();
-    String state() default "";
+    String state() default ALL_STATE;
 
     /**
      * 優先度の逆転フラグ

@@ -23,6 +23,8 @@ public class ExecuteManager {
         return thisInstance;
     }
 
+    private FamicomRom famicomRom;
+
     private class GameStateImpl extends GameState {
         private GameStateImpl(String state) {
             super.stateStack.push(state);
@@ -88,6 +90,7 @@ public class ExecuteManager {
     public ExecuteManager initialize(Class<?> romClass) {
         initState = "";
         romName = "Unknown";
+        famicomRom = romClass.getAnnotation(FamicomRom.class);
         AnnotationUtil.getAnnotation(romClass.getAnnotations(), FamicomRom.class).stream().findFirst().ifPresent(attr -> {
             initState = (String) attr.get("initState");
             romName = (String) attr.get("name");
@@ -120,5 +123,9 @@ public class ExecuteManager {
     public ExecuteManager reset() {
         EventManager.getInstance().dispatchEvent(Event.EventType.PRE_RESET, "", eventParam);
         return initGame(false);
+    }
+
+    public FamicomRom getFamicomRom() {
+        return famicomRom;
     }
 }

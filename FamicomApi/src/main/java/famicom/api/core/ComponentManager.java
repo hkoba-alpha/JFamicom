@@ -62,7 +62,7 @@ public class ComponentManager {
     }
 
     public List<Class<?>> getComponentClasses() {
-        return componentMap.values().stream().sorted().map(v -> v.classDef).collect(Collectors.toList());
+        return componentMap.entrySet().stream().filter(v -> v.getKey().equals(v.getValue().classDef.getName())).map(v -> v.getValue()).sorted().map(v -> v.classDef).collect(Collectors.toList());
     }
 
     public Object getObject(Class<?> type) {
@@ -92,7 +92,7 @@ public class ComponentManager {
         return null;
     }
 
-    private void entryClass(Class<?> classDef, Map<String, Object> attrMap) {
+    private void entryClass(Class<?> classDef, ComponentData componentData) {
         if (classDef.equals(Object.class)) {
             return;
         }
@@ -102,24 +102,28 @@ public class ComponentManager {
         }
         AnnotationUtil.getAnnotation(classDef.getAnnotations(), Component.class).forEach(attr -> {
             ComponentData data = componentMap.get(classDef.getName());
-            ComponentData newData = new ComponentData((attrMap != null ? attrMap: attr), classDef);
+            ComponentData newData = (componentData != null ? componentData: new ComponentData(attr, classDef));
             if (data == null || newData.compareTo(data) < 0) {
                 // 登録する
                 componentMap.put(classDef.getName(), newData);
-                if (attrMap == null) {
-                    entryClass(classDef.getSuperclass(), attr);
+                if (componentData == null) {
+                    entryClass(classDef.getSuperclass(), newData);
+                    if (!classDef.isInterface()) {
+                        for (Class<?> cls: classDef.getInterfaces()) {
+                            entryClass(cls, newData);
+                        }
+                    }
                 }
             }
         });
         // 親クラスへも遡る
-        if (attrMap != null) {
-            entryClass(classDef.getSuperclass(), attrMap);
+        if (componentData != null && !classDef.isInterface()) {
+            entryClass(classDef.getSuperclass(), componentData);
         }
     }
 
     private void checkClass(Class<?> classDef) {
         if (classDef.isAnnotation() || classDef.isInterface()) {
-            System.out.println("Out:" + classDef);
             return;
         }
         entryClass(classDef, null);
@@ -148,7 +152,6 @@ public class ComponentManager {
                     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                         if (file.toString().endsWith(".class")) {
                             String name = topPath.relativize(file).toString().replaceAll(".class$", "").replace('/', '.');
-                            System.out.println(name);
                             try {
                                 checkClass(classLoader.loadClass(name));
                             } catch (ClassNotFoundException e) {

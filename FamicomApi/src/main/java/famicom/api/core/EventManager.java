@@ -32,7 +32,6 @@ public class EventManager {
             Object[] args = new Object[typeList.size()];
             for (int i = 0; i < args.length; i++) {
                 args[i] = param.get(typeList.get(i));
-
             }
             try {
                 method.invoke(target, args);
@@ -50,15 +49,10 @@ public class EventManager {
         return thisInstance;
     }
 
-    private final List<Event.EventType> globalTypeList = new ArrayList<>();
-
     private Map<Event.EventType, List<EventInvoker>> globalEventMap = new HashMap<>();
     private Map<String, Map<Event.EventType, List<EventInvoker>>> stateEventMap = new HashMap<>();
 
     private EventManager() {
-        globalTypeList.add(Event.EventType.INITIALIZE);
-        globalTypeList.add(Event.EventType.PRE_RESET);
-        globalTypeList.add(Event.EventType.POST_RESET);
     }
 
     EventManager initialize() {
@@ -76,16 +70,15 @@ public class EventManager {
     }
 
     public EventManager dispatchEvent(Event.EventType type, String state, Map<String, Object> param) {
-        Map<Event.EventType, List<EventInvoker>> map;
-        if (globalTypeList.contains(type)) {
-            map = globalEventMap;
-        } else {
-            map = stateEventMap.get(state);
-            if (map == null) {
-                return this;
-            }
+        List<EventInvoker> list = globalEventMap.get(type);
+        if (list != null) {
+            list.forEach(v -> v.dispatchEvent(param));
         }
-        List<EventInvoker> list = map.get(type);
+        Map<Event.EventType, List<EventInvoker>> map = stateEventMap.get(state);
+        if (map == null) {
+            return this;
+        }
+        list = map.get(type);
         if (list != null) {
             list.forEach(v -> v.dispatchEvent(param));
         }
@@ -97,11 +90,12 @@ public class EventManager {
         Event.EventType type = (Event.EventType)attr.get("value");
         List<EventInvoker> list;
         EventInvoker invoker = new EventInvoker(ComponentManager.getInstance().getObject(classDef), method);
+        String state = (String)attr.get("state");
         Map<Event.EventType, List<EventInvoker>> map;
-        if (globalTypeList.contains(type)) {
+        if (Event.ALL_STATE.equals(state)) {
+            // インスタンスで一致を判断する
             map = globalEventMap;
         } else {
-            String state = (String)attr.get("state");
             map = stateEventMap.get(state);
             if (map == null) {
                 map = new HashMap<>();

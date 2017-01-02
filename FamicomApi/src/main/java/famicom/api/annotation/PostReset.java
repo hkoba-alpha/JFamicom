@@ -12,4 +12,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Event(Event.EventType.POST_RESET)
 public @interface PostReset {
+    String state() default Event.ALL_STATE;
 }
