@@ -1,4 +1,3 @@
-group 'jfamicom-impl'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
@@ -14,14 +13,9 @@ mainClassName = 'famicom.api.FamicomMain'
 
 repositories {
     mavenCentral()
-    maven { url "https://oss.sonatype.org/content/repositories/snapshots/"}
 }
 
 dependencies {
     compile project(':FamicomApi')
-    compile 'org.slick2d:slick2d-core:1.0.1'
-}
-
-jar {
-    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    compile project(':FamicomImpl')
 }

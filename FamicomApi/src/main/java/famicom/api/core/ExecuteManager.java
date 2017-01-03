@@ -5,10 +5,7 @@ import famicom.api.annotation.FamicomRom;
 import famicom.api.state.GameState;
 import famicom.api.state.ScanState;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by hkoba on 2016/12/31.
@@ -24,6 +21,7 @@ public class ExecuteManager {
     }
 
     private FamicomRom famicomRom;
+    private Class<?> romClass;
 
     private class GameStateImpl extends GameState {
         private GameStateImpl(String state) {
@@ -73,9 +71,6 @@ public class ExecuteManager {
     private GameStateImpl gameState;
     private ScanStateImpl scanState;
 
-    private String initState;
-    private String romName;
-
     private ExecuteManager() {
         eventParam.put("byte", new Byte((byte) 0));
         eventParam.put("char", new Character((char) 0));
@@ -88,27 +83,31 @@ public class ExecuteManager {
     }
 
     public ExecuteManager initialize(Class<?> romClass) {
-        initState = "";
-        romName = "Unknown";
+        this.romClass = romClass;
+        List<String> packages = new ArrayList<>();
         famicomRom = romClass.getAnnotation(FamicomRom.class);
-        AnnotationUtil.getAnnotation(romClass.getAnnotations(), FamicomRom.class).stream().findFirst().ifPresent(attr -> {
-            initState = (String) attr.get("initState");
-            romName = (String) attr.get("name");
-        });
+        for (String pkg: famicomRom.packages()) {
+            packages.add(pkg);
+        }
+        if (packages.size() == 0) {
+            // デフォルト
+            packages.add(romClass.getPackage().getName());
+        }
+        EventManager.getInstance().initialize(romClass, packages);
         return initGame(true);
     }
 
     private ExecuteManager initGame(boolean initFlag) {
-        gameState = new GameStateImpl(initState);
+        gameState = new GameStateImpl(famicomRom.initState());
         scanState = new ScanStateImpl();
         eventParam.put(GameState.class.getName(), gameState);
         eventParam.put(ScanState.class.getName(), scanState);
         if (initFlag) {
-            EventManager.getInstance().initialize().dispatchEvent(Event.EventType.INITIALIZE, "", eventParam);
+            EventManager.getInstance().dispatchEvent(Event.EventType.INITIALIZE, "", eventParam);
         } else {
             EventManager.getInstance().dispatchEvent(Event.EventType.POST_RESET, "", eventParam);
         }
-        EventManager.getInstance().dispatchEvent(Event.EventType.ENTER_STATE, initState, eventParam);
+        EventManager.getInstance().dispatchEvent(Event.EventType.ENTER_STATE, famicomRom.initState(), eventParam);
         return this;
     }
 
@@ -127,5 +126,8 @@ public class ExecuteManager {
 
     public FamicomRom getFamicomRom() {
         return famicomRom;
+    }
+    public Class<?> getRomClass() {
+        return romClass;
     }
 }

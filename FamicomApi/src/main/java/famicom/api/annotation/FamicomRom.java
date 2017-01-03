@@ -27,4 +27,6 @@ public @interface FamicomRom {
     String initState() default "";
 
     MirrorMode mirror() default MirrorMode.HORIZONTAL;
+
+    String[] packages() default {};
 }

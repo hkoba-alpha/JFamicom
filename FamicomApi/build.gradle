@@ -2,6 +2,7 @@ group 'jfamicom-api'
 version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
+apply plugin: 'application'
 
 compileJava {
     options.encoding = 'UTF-8'
@@ -9,10 +10,18 @@ compileJava {
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
+mainClassName = 'famicom.api.FamicomMain'
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
 
+}
+
+jar {
+    manifest {
+        attributes "Main-Class" : mainClassName
+    }
 }

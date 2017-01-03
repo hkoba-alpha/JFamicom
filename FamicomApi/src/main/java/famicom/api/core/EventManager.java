@@ -2,6 +2,7 @@ package famicom.api.core;
 
 import famicom.api.annotation.Component;
 import famicom.api.annotation.Event;
+import famicom.api.annotation.FamicomApplication;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -55,10 +56,22 @@ public class EventManager {
     private EventManager() {
     }
 
-    EventManager initialize() {
+    EventManager initialize(Class<?> romClass, List<String> packages) {
         globalEventMap.clear();
         stateEventMap.clear();
         ComponentManager.getInstance().getComponentClasses().forEach(def -> {
+            if (!romClass.equals(def) && Component.ComponentType.APPLICATION.equals(AnnotationUtil.getAnnotation(def.getAnnotations(), Component.class).get(0).get("value"))) {
+                boolean okFlag = false;
+                for (String pkg: packages) {
+                    if (def.getName().startsWith(pkg + ".")) {
+                        okFlag = true;
+                        break;
+                    }
+                }
+                if (!okFlag) {
+                    return;
+                }
+            }
             for (Method method: def.getDeclaredMethods()) {
                 AnnotationUtil.getAnnotation(method.getAnnotations(), Event.class).forEach(attr -> {
                     // Eventが見つかった

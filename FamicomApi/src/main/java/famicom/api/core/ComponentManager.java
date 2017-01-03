@@ -4,10 +4,14 @@ import famicom.api.annotation.Attach;
 import famicom.api.annotation.Component;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.net.JarURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
@@ -28,8 +32,8 @@ public class ComponentManager {
         private Object instance;
 
         private ComponentData(Map<String, Object> attr, Class<?> def) {
-            priority = (Integer)attr.get("priority");
-            type = (Component.ComponentType)attr.get("value");
+            priority = (Integer) attr.get("priority");
+            type = (Component.ComponentType) attr.get("value");
             classDef = def;
         }
 
@@ -58,20 +62,19 @@ public class ComponentManager {
     }
 
     private ComponentManager() {
-        scanComponent(ComponentManager.class);
     }
 
     public List<Class<?>> getComponentClasses() {
         return componentMap.entrySet().stream().filter(v -> v.getKey().equals(v.getValue().classDef.getName())).map(v -> v.getValue()).sorted().map(v -> v.classDef).collect(Collectors.toList());
     }
 
-    public Object getObject(Class<?> type) {
+    public <T> T getObject(Class<T> type) {
         ComponentData data = componentMap.get(type.getName());
         if (data != null) {
             if (data.instance == null) {
                 try {
                     data.instance = data.classDef.newInstance();
-                    for (Field field: data.classDef.getDeclaredFields()) {
+                    for (Field field : data.classDef.getDeclaredFields()) {
                         AnnotationUtil.getAnnotation(field.getAnnotations(), Attach.class).stream().findFirst().ifPresent(v -> {
                             field.setAccessible(true);
                             try {
@@ -87,7 +90,7 @@ public class ComponentManager {
                     e.printStackTrace();
                 }
             }
-            return data.instance;
+            return (T) data.instance;
         }
         return null;
     }
@@ -102,14 +105,15 @@ public class ComponentManager {
         }
         AnnotationUtil.getAnnotation(classDef.getAnnotations(), Component.class).forEach(attr -> {
             ComponentData data = componentMap.get(classDef.getName());
-            ComponentData newData = (componentData != null ? componentData: new ComponentData(attr, classDef));
+            ComponentData newData = (componentData != null ? componentData : new ComponentData(attr, classDef));
             if (data == null || newData.compareTo(data) < 0) {
                 // 登録する
+                System.out.println("EntryComponent:" + classDef.getName());
                 componentMap.put(classDef.getName(), newData);
                 if (componentData == null) {
                     entryClass(classDef.getSuperclass(), newData);
                     if (!classDef.isInterface()) {
-                        for (Class<?> cls: classDef.getInterfaces()) {
+                        for (Class<?> cls : classDef.getInterfaces()) {
                             entryClass(cls, newData);
                         }
                     }
@@ -129,6 +133,63 @@ public class ComponentManager {
         entryClass(classDef, null);
     }
 
+    public ComponentManager scanComponent(URLClassLoader classLoader, URL root) {
+        if (root.getFile().endsWith(".jar")) {
+            try (JarFile jarFile = new JarFile(root.getFile())) {
+                Collections.list(jarFile.entries()).forEach(f -> {
+                    if (!f.getName().endsWith(".class")) {
+                        return;
+                    }
+                    String name = f.getName().replaceAll(".class$", "").replace('/', '.');
+                    try {
+                        checkClass(classLoader.loadClass(name));
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            File topFile = new File(root.getFile());
+            try {
+                Path topPath = topFile.toPath();
+                Files.walkFileTree(topPath, new FileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        if (file.toString().endsWith(".class")) {
+                            String name = topPath.relativize(file).toString().replaceAll(".class$", "").replace('/', '.');
+                            try {
+                                checkClass(classLoader.loadClass(name));
+                            } catch (ClassNotFoundException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+
+                    @Override
+                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return this;
+    }
+
     public ComponentManager scanComponent(Class<?> cls) {
         final ClassLoader classLoader = cls.getClassLoader();
         final URL root = classLoader.getResource(cls.getPackage().getName().replace('.', '/'));
@@ -136,8 +197,8 @@ public class ComponentManager {
         if ("file".equals(root.getProtocol())) {
             File topFile = new File(root.getFile());
             String pkg = cls.getPackage().getName();
-            String[] lst = cls.getPackage().getName().split(".");
-            for (int i = cls.getPackage().getName().split("¥¥.").length; i >= 0; i--) {
+            String[] lst = pkg.split("¥¥.");
+            for (int i = lst.length; i > 0; i--) {
                 topFile = topFile.getParentFile();
             }
             try {

@@ -1,5 +1,6 @@
 package famicom.impl.game;
 
+import famicom.api.core.ExecuteManager;
 import org.newdawn.slick.GameContainer;
 import org.newdawn.slick.SlickException;
 import org.newdawn.slick.state.StateBasedGame;
@@ -9,7 +10,7 @@ import org.newdawn.slick.state.StateBasedGame;
  */
 public class FamicomContainer extends StateBasedGame {
     public FamicomContainer() {
-        super("ファミコン");
+        super(ExecuteManager.getInstance().getFamicomRom().name());
     }
 
     @Override
