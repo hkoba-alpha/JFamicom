@@ -34,7 +34,7 @@ public class FamicomOSImpl implements IFamicomOS {
 
         try {
             AppGameContainer container = new AppGameContainer(new FamicomContainer());
-            container.setDisplayMode(512, 448, false);
+            container.setDisplayMode(256 * 2, 224 * 2, false);
             container.setTargetFrameRate(60);
             container.setVSync(true);
             container.setShowFPS(true);

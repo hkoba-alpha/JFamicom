@@ -43,8 +43,9 @@ public class FamicomMainState extends BasicGameState {
     @Override
     public void render(GameContainer container, StateBasedGame game, Graphics g) throws SlickException {
         g.setColor(bgColor);
-        g.fillRect(0, 0, 512, 448);
+        g.fillRect(0, 0, 256 * 2, 224 * 2);
         g.drawImage(imageBuffer.getImage(), 0, 0);
+        //g.drawImage(imageBuffer.getImage(), 0, 0, 256 * 3, 224 * 3, 0, 0, 512, 448);
     }
 
     @Override

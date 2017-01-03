@@ -119,7 +119,7 @@ public class FamicomPPUImpl implements IFamicomPPU {
             int sft = 14;
             int ax = -2;
             if (super.flipX) {
-                sft = 3;
+                sft = 0;
                 ax = 2;
             }
             byte[] palette = paletteTable.getData(super.color + 4, super.behindBg ? 0 : 64);
@@ -143,7 +143,7 @@ public class FamicomPPUImpl implements IFamicomPPU {
             int lx = x >> 3;
             int ly = y >> 3;
             int addr = lx | (ly << 5);
-            int sft = 14 >> ((x & 7) * 2);
+            int sft = 14 - ((x & 7) * 2);
             int bit = pattern.getData(memoryData[addr] & 255, y & 7);
             byte[] color = paletteTable.getData(getPalette(lx, ly), 0);
             while (scanX < 256) {
@@ -299,24 +299,27 @@ public class FamicomPPUImpl implements IFamicomPPU {
         }
         if (state.getLineCount() >= 8 && state.getLineCount() < 232) {
             // Bg
-            int nmix = 0;
-            int py = state.getLineCount() + controlData.getScrollY();
-            int px = controlData.getScrollX();
-            int scx = 0;
-            if (py >= 240) {
-                nmix ^= 2;
-                py -= 240;
-            }
-            if (!controlData.isScreenMask()) {
-                scx += 8;
-                px += 8;
-            }
-            while (scx < 256) {
-                if (px >= 256) {
-                    nmix ^= 1;
-                    px -= 256;
+            if (controlData.isScreenEnabled()) {
+                int nmix = 0;
+                int py = state.getLineCount() + controlData.getScrollY();
+                int px = controlData.getScrollX();
+                int scx = 0;
+                if (py >= 240) {
+                    nmix ^= 2;
+                    py -= 240;
+                }
+                if (!controlData.isScreenMask()) {
+                    scx += 8;
+                    px += 8;
+                    if (px >= 256) {
+                        nmix ^= 1;
+                        px -= 256;
+                    }
                 }
                 scx = screenTable[nmix].scanBg(px, py, scx, patternTables[controlData.getScreenPatternAddress()]);
+                if (scx < 256) {
+                    screenTable[nmix ^ 1].scanBg(0, py, scx, patternTables[controlData.getScreenPatternAddress()]);
+                }
             }
             renderLine(state.getLineCount() - 8);
         }

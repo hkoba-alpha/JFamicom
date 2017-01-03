@@ -28,12 +28,23 @@ public class NameTable extends MemoryAccessor<NameTable> {
         return (read(0x3c0 + addr) >> sft) & 3;
     }
 
-    public NameTable setPalette(int lx, int ly, int pal) {
+    public NameTable setColor(int lx, int ly, int pal) {
         lx &= 31;
         ly &= 31;
         int addr = ((ly >> 2) << 3) | (lx >> 2);
         int sft = ((ly & 2) << 1) | (lx & 2);
         write(0x3c0 + addr, (read(0x3c0 + addr) & (~(3 << sft))) | ((pal & 3) << sft));
+        return this;
+    }
+
+    public NameTable print(int lx, int ly, byte[] data, int width, int height, int offset, int lineSize) {
+        for (int dy = 0; dy < height; dy++) {
+            int yy = (ly + dy) % 30;
+            for (int dx = 0; dx < width; dx++) {
+                int xx = (lx + dx) & 31;
+                write((yy << 5) + xx, data[offset + dy * lineSize + dx]);
+            }
+        }
         return this;
     }
 }

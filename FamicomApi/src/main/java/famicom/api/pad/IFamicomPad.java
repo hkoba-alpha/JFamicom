@@ -7,4 +7,5 @@ import famicom.api.annotation.FamicomApi;
  */
 @FamicomApi
 public interface IFamicomPad {
+    PadData getPad(int index);
 }

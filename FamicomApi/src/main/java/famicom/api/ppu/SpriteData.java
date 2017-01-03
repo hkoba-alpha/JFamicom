@@ -74,4 +74,20 @@ public class SpriteData {
         this.x = x;
         return this;
     }
+
+    /**
+     * 属性をまとめて設定する
+     * @param flipY
+     * @param flipX
+     * @param behindBg
+     * @param color
+     * @return
+     */
+    public SpriteData setAttribute(boolean flipY, boolean flipX, boolean behindBg, int color) {
+        this.flipY = flipY;
+        this.flipX = flipX;
+        this.behindBg = behindBg;
+        this.color = color;
+        return this;
+    }
 }
