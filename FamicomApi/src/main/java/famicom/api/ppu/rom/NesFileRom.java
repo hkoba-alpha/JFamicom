@@ -31,7 +31,7 @@ public class NesFileRom implements IChrRom {
             int dx = data[4] * 0x4000;
             if (data[5] > 0) {
                 fis.skip(dx);
-                int sz = 0x2000 * data[5];
+                int sz = 0x4000 * data[5];
                 byte[] pattern = new byte[sz];
                 fis.read(pattern);
                 return ChrBankData.makeBankData(pattern, ppuAddr, size);

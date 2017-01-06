@@ -68,22 +68,29 @@ public class ComponentManager {
         return componentMap.entrySet().stream().filter(v -> v.getKey().equals(v.getValue().classDef.getName())).map(v -> v.getValue()).sorted().map(v -> v.classDef).collect(Collectors.toList());
     }
 
+    private void attachField(Object obj, Class<?> classDef) {
+        if (Object.class.equals(classDef)) {
+            return;
+        }
+        for (Field field : classDef.getDeclaredFields()) {
+            AnnotationUtil.getAnnotation(field.getAnnotations(), Attach.class).stream().findFirst().ifPresent(v -> {
+                field.setAccessible(true);
+                try {
+                    field.set(obj, getObject(field.getType()));
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            });
+        }
+    }
+
     public <T> T getObject(Class<T> type) {
         ComponentData data = componentMap.get(type.getName());
         if (data != null) {
             if (data.instance == null) {
                 try {
                     data.instance = data.classDef.newInstance();
-                    for (Field field : data.classDef.getDeclaredFields()) {
-                        AnnotationUtil.getAnnotation(field.getAnnotations(), Attach.class).stream().findFirst().ifPresent(v -> {
-                            field.setAccessible(true);
-                            try {
-                                field.set(data.instance, getObject(field.getType()));
-                            } catch (IllegalAccessException e) {
-                                e.printStackTrace();
-                            }
-                        });
-                    }
+                    attachField(data.instance, data.classDef);
                 } catch (InstantiationException e) {
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
@@ -101,7 +108,7 @@ public class ComponentManager {
         }
         if (componentMap.containsKey(classDef.getName())) {
             // 登録済み
-            return;
+            //return;
         }
         AnnotationUtil.getAnnotation(classDef.getAnnotations(), Component.class).forEach(attr -> {
             ComponentData data = componentMap.get(classDef.getName());

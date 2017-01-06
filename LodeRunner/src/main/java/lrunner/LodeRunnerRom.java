@@ -1,12 +1,15 @@
 package lrunner;
 
 import famicom.api.annotation.*;
+import famicom.api.apu.FamicomAPU;
 import famicom.api.pad.IFamicomPad;
 import famicom.api.pad.PadData;
 import famicom.api.ppu.IFamicomPPU;
 import famicom.api.ppu.PPUMemory;
 import famicom.api.ppu.rom.NesFileRom;
 import famicom.api.state.ScanState;
+import lrunner.apu.PsgSoundData;
+import lrunner.apu.SoundManager;
 import lrunner.data.StageConfig;
 import lrunner.data.StageData;
 import lrunner.play.NormalTitlePlay;
@@ -36,6 +39,8 @@ public class LodeRunnerRom {
     private static byte[][] blockData;
 
     //public static SoundManager soundManager;
+    @Attach
+    private SoundManager soundManager;
 
     static class CharaData {
         int spriteNum;
@@ -100,6 +105,9 @@ public class LodeRunnerRom {
     @Attach
     private IFamicomPad famicomPad;
 
+    @Attach
+    private FamicomAPU famicomAPU;
+
     @Initialize
     private void init() {
         blockData = new byte[blockColor.length][5];
@@ -131,11 +139,26 @@ public class LodeRunnerRom {
         playData = new NormalTitlePlay(famicomPPU);
     }
 
+    @PostReset
+    private void test() {
+        famicomAPU.getSquare(0).setEnabled(true);
+        famicomAPU.getSquare(1).setEnabled(true);
+        famicomAPU.getTriangle().setEnabled(true);
+        famicomAPU.getNoise().setEnabled(true);
+        //famicomAPU.getSquare(0).setEnabled(true).setVolume(0, true, 15).setTimer(1, 1200);
+        PsgSoundData startSound = new PsgSoundData(
+                StartPlay.class.getResourceAsStream("/sound6.txt"));
+        soundManager.addSequencer(0, startSound, true);
+    }
+
     @VBlank
     private void stepFrame() {
         addr++;
         famicomPPU.getPaletteTable().write(9, color1[(addr >> 5) & 3])
                 .write(15, color2[(addr >> 4) & 3]);
         playData = playData.stepFrame(famicomPad, famicomPPU);
+        for (int i = 0; i < 4; i++) {
+            soundManager.soundStep(famicomAPU, false);
+        }
     }
 }

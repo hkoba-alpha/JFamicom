@@ -13,8 +13,8 @@ import java.util.*;
 public class ExecuteManager {
     private static final ExecuteManager thisInstance = new ExecuteManager();
 
-    private static final int SCAN_LINE_SIZE = 262;
-    private static final int VSYNC_COUNT = 240;
+    public static final int SCAN_LINE_SIZE = 262;
+    public static final int VSYNC_COUNT = 240;
 
     public static ExecuteManager getInstance() {
         return thisInstance;
@@ -104,9 +104,8 @@ public class ExecuteManager {
         eventParam.put(ScanState.class.getName(), scanState);
         if (initFlag) {
             EventManager.getInstance().dispatchEvent(Event.EventType.INITIALIZE, "", eventParam);
-        } else {
-            EventManager.getInstance().dispatchEvent(Event.EventType.POST_RESET, "", eventParam);
         }
+        EventManager.getInstance().dispatchEvent(Event.EventType.POST_RESET, "", eventParam);
         EventManager.getInstance().dispatchEvent(Event.EventType.ENTER_STATE, famicomRom.initState(), eventParam);
         return this;
     }
