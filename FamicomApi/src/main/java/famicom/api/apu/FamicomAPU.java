@@ -33,6 +33,7 @@ public class FamicomAPU {
     protected SquareSound[] squareSound = new SquareSound[2];
     protected TriangleSound triangleSound;
     protected NoiseSound noiseSound;
+    protected DeltaSound deltaSound;
 
     public FamicomAPU setStepMode(StepMode mode) {
         stepMode = mode;
@@ -57,6 +58,10 @@ public class FamicomAPU {
         return noiseSound;
     }
 
+    public DeltaSound getDelta() {
+        return deltaSound;
+    }
+
     @Initialize
     protected void init() {
         // 必要に応じてオーバーライド
@@ -64,6 +69,7 @@ public class FamicomAPU {
         squareSound[1] = new SquareSound(true);
         triangleSound = new TriangleSound();
         noiseSound = new NoiseSound();
+        deltaSound = new DeltaSound();
     }
 
     @PostReset
@@ -101,6 +107,7 @@ public class FamicomAPU {
             getSquare(1).stepCounter();
             getTriangle().stepCounter();
             getNoise().stepCounter();
+            getDelta().stepCounter();
         }
         if (eFlag) {
             getSquare(0).stepEnvelope();
@@ -112,6 +119,7 @@ public class FamicomAPU {
             getSquare(1).stepOutput();
             getTriangle().stepOutput();
             getNoise().stepOutput();
+            getDelta().stepOutput();
             flushOutput();
         }
         frameCounter++;

@@ -1,6 +1,4 @@
-package famicom.api.core;
-
-import famicom.api.ppu.NameTable;
+package famicom.api.memory;
 
 /**
  * Created by hkoba on 2017/01/01.

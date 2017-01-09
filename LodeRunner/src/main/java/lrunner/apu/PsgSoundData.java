@@ -2,7 +2,7 @@ package lrunner.apu;
 
 import famicom.api.apu.FamicomAPU;
 import famicom.api.core.ComponentManager;
-import famicom.api.memory.FamicomRAM;
+import famicom.api.memory.FamicomMemory;
 
 import java.io.*;
 import java.util.HashMap;
@@ -15,7 +15,7 @@ public class PsgSoundData implements SoundSequencer {
 		int addrIndex;
 		LineData nextData;
 
-		private FamicomRAM famicomRAM;
+		private FamicomMemory famicomRAM;
 
 		LineData(String[] dt, int ix, int wait) {
 			data = new byte[4];
@@ -27,7 +27,7 @@ public class PsgSoundData implements SoundSequencer {
 					flag |= (1 << i);
 				}
 			}
-			famicomRAM = ComponentManager.getInstance().getObject(FamicomRAM.class);
+			famicomRAM = ComponentManager.getInstance().getObject(FamicomMemory.class);
 		}
 
 		void writeData(FamicomAPU sound) {

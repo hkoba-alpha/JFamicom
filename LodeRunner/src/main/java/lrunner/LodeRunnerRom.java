@@ -2,12 +2,11 @@ package lrunner;
 
 import famicom.api.annotation.*;
 import famicom.api.apu.FamicomAPU;
+import famicom.api.memory.file.NesRomFile;
+import famicom.api.memory.file.TextMemoryFile;
 import famicom.api.pad.IFamicomPad;
-import famicom.api.pad.PadData;
 import famicom.api.ppu.IFamicomPPU;
-import famicom.api.ppu.PPUMemory;
-import famicom.api.ppu.rom.NesFileRom;
-import famicom.api.state.ScanState;
+import famicom.api.memory.PPUMemory;
 import lrunner.apu.PsgSoundData;
 import lrunner.apu.SoundManager;
 import lrunner.data.StageConfig;
@@ -16,16 +15,14 @@ import lrunner.play.NormalTitlePlay;
 import lrunner.play.PlayBase;
 import lrunner.play.StartPlay;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.FileNotFoundException;
 
 /**
  * Created by hkoba on 2017/01/02.
  */
 @FamicomRom(name = "ロードランナー", mirror = FamicomRom.MirrorMode.VERTICAL)
-@ChrRom(type = NesFileRom.class, args = "/Users/hkoba/Documents/ROM/LodeRunner.nes")
-@ChrRom(type = NesFileRom.class, args = "/Users/hkoba/Documents/ROM/DQ1.nes")
+@ChrRom(type = TextMemoryFile.class, fileName = "/memory.txt")
+@ChrRom(type = NesRomFile.class, fileName = "/Users/hkoba/Documents/ROM/DQ1.nes")
 public class LodeRunnerRom {
 
     private int y = 0;
@@ -110,6 +107,12 @@ public class LodeRunnerRom {
 
     @Initialize
     private void init() {
+        try {
+            new TextMemoryFile().loadData("/memory.txt");
+            new NesRomFile().loadData("/Users/hkoba/Documents/ROM/LodeRunner.nes").printText(System.out, " 123", 16);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
         blockData = new byte[blockColor.length][5];
         for (int i = 0; i < blockColor.length; i++) {
             for (int j = 0; j < 4; j++) {

@@ -1,6 +1,6 @@
 package famicom.api.ppu;
 
-import famicom.api.core.MemoryAccessor;
+import famicom.api.memory.MemoryAccessor;
 
 /**
  * Created by hkoba on 2017/01/01.

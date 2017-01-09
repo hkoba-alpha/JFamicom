@@ -1,7 +1,7 @@
 package lrunner.apu;
 
 import famicom.api.apu.FamicomAPU;
-import famicom.api.apu.IDMASound;
+import famicom.api.apu.DeltaSound;
 
 public abstract class AbstractDMASequencer implements SoundSequencer {
 
@@ -29,11 +29,11 @@ public abstract class AbstractDMASequencer implements SoundSequencer {
 		//pause(apu.getDMA(), frame);
 	}
 
-	protected void start(IDMASound sound, int frame) {
+	protected void start(DeltaSound sound, int frame) {
 	}
 
-	protected void pause(IDMASound sound, int frame) {
+	protected void pause(DeltaSound sound, int frame) {
 	}
 
-	abstract protected boolean soundStep(IDMASound sound, int frame);
+	abstract protected boolean soundStep(DeltaSound sound, int frame);
 }

@@ -54,7 +54,7 @@ public class FamicomAPUImpl extends FamicomAPU {
                 }
             }
             if (keyOnFlag) {
-                soundMaker.setFrameSample(timer, sample);
+                soundMaker.setFrameSample(timer * 2, sample);
             } else {
                 soundMaker.setFrameSample(0, sample);
             }
@@ -143,9 +143,9 @@ public class FamicomAPUImpl extends FamicomAPU {
             }
         }
         int rest = (maxAvailable - dataLine.available());
+        soundMixer.mixData(sampleBuffer[0], sampleBuffer[1], sampleBuffer[2], sampleBuffer[3], sampleBuffer[4], sampleBuffer[5]);
+        dataLine.write(sampleBuffer[5], 0, sampleBuffer[5].length);
         if (rest < SoundMaker.SAMPLE_RATE * 12 || !adjustFlag) {
-            soundMixer.mixData(sampleBuffer[0], sampleBuffer[1], sampleBuffer[2], sampleBuffer[3], sampleBuffer[4], sampleBuffer[5]);
-            dataLine.write(sampleBuffer[5], 0, sampleBuffer[5].length);
             if (rest < SoundMaker.SAMPLE_RATE * 2 && adjustFlag) {
                 // 少し増やす
                 adjustCount--;
@@ -158,7 +158,7 @@ public class FamicomAPUImpl extends FamicomAPU {
                 }
                 System.out.println("Timing:" + rest);
                 adjustFlag = false;
-                hBlank();
+                flushOutput();
             }
         } else {
             // 大きくなりすぎた
