@@ -38,7 +38,6 @@ public class FamicomOSImpl implements IFamicomOS {
             container.setTargetFrameRate(60);
             container.setVSync(true);
             container.setShowFPS(true);
-            //container.setDefaultFont(new UnicodeFont(new Font("Dialog", Font.BOLD, 14)));
             container.start();
         } catch (SlickException e) {
             e.printStackTrace();

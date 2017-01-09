@@ -72,11 +72,18 @@ public class EventManager {
                     return;
                 }
             }
-            for (Method method: def.getDeclaredMethods()) {
-                AnnotationUtil.getAnnotation(method.getAnnotations(), Event.class).forEach(attr -> {
-                    // Eventが見つかった
-                    entryEvent(def, method, attr);
-                });
+            Class<?> classDef = def;
+            while (classDef != null) {
+                for (Method method: classDef.getDeclaredMethods()) {
+                    AnnotationUtil.getAnnotation(method.getAnnotations(), Event.class).forEach(attr -> {
+                        // Eventが見つかった
+                        entryEvent(def, method, attr);
+                    });
+                }
+                classDef = classDef.getSuperclass();
+                if (Object.class.equals(classDef)) {
+                    break;
+                }
             }
         });
         return this;
