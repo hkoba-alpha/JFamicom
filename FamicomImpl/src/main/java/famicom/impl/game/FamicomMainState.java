@@ -9,6 +9,8 @@ import org.newdawn.slick.state.StateBasedGame;
  * Created by hkoba on 2017/01/01.
  */
 public class FamicomMainState extends BasicGameState {
+    public static final int STATE_ID = 1;
+
     private static final FamicomMainState thisInstance = new FamicomMainState();
 
     private ImageBuffer imageBuffer;
@@ -32,7 +34,7 @@ public class FamicomMainState extends BasicGameState {
 
     @Override
     public int getID() {
-        return 0;
+        return STATE_ID;
     }
 
     @Override

@@ -21,19 +21,8 @@ public class FamicomOSImpl implements IFamicomOS {
     public void execute(String[] args, List<RomManager.RomData> romDataList) {
         LibraryLoader.init();
 
-        Class<?> romClass;
         try {
-            romClass = romDataList.get(0).getRomClass();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-            return;
-        }
-
-        ComponentManager.getInstance().scanComponent(romClass);
-        ExecuteManager.getInstance().initialize(romClass);
-
-        try {
-            AppGameContainer container = new AppGameContainer(new FamicomContainer());
+            AppGameContainer container = new AppGameContainer(new FamicomContainer(romDataList));
             container.setDisplayMode(256 * 2, 224 * 2, false);
             container.setTargetFrameRate(60);
             container.setVSync(true);
