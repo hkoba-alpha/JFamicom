@@ -3,6 +3,7 @@ package famicom.api.core;
 import famicom.api.annotation.Event;
 import famicom.api.annotation.FamicomRom;
 import famicom.api.state.GameState;
+import famicom.api.state.PowerControl;
 import famicom.api.state.ScanState;
 
 import java.util.*;
@@ -64,12 +65,25 @@ public class ExecuteManager {
             return true;
         }
     }
+    private class PowerControlImpl extends PowerControl {
+        public boolean isReset() {
+            return resetFlag;
+        }
+        public boolean isPowerOff() {
+            return offFlag;
+        }
+        public void init() {
+            resetFlag = false;
+            offFlag = false;
+        }
+    }
 
 
     private Map<String, Object> eventParam = new HashMap<>();
 
     private GameStateImpl gameState;
     private ScanStateImpl scanState;
+    private PowerControlImpl powerControl;
 
     private ExecuteManager() {
         eventParam.put("byte", new Byte((byte) 0));
@@ -100,8 +114,10 @@ public class ExecuteManager {
     private ExecuteManager initGame(boolean initFlag) {
         gameState = new GameStateImpl(famicomRom.initState());
         scanState = new ScanStateImpl();
+        powerControl = new PowerControlImpl();
         eventParam.put(GameState.class.getName(), gameState);
         eventParam.put(ScanState.class.getName(), scanState);
+        eventParam.put(PowerControl.class.getName(), powerControl);
         if (initFlag) {
             EventManager.getInstance().dispatchEvent(Event.EventType.INITIALIZE, "", eventParam);
         }
@@ -115,10 +131,13 @@ public class ExecuteManager {
         while (scanState.scanLine()) {
             // 何もしない
         }
+        if (powerControl.isReset() || powerControl.isPowerOff()) {
+            reset();
+        }
         return this;
     }
 
-    public ExecuteManager reset() {
+    private ExecuteManager reset() {
         EventManager.getInstance().dispatchEvent(Event.EventType.PRE_RESET, "", eventParam);
         return initGame(false);
     }

@@ -35,6 +35,12 @@ public class PadData {
      */
     protected int readFlag;
 
+    public boolean isDown(int padNum) {
+        int flag = 1 << padNum;
+        boolean ret = (readFlag & flag) > 0;
+        readFlag = (readFlag & ~flag) | (buttonFlag & flag);
+        return ret;
+    }
     public boolean isDown(ButtonType type) {
         boolean ret = (readFlag & type.buttonFlag) > 0;
         readFlag = (readFlag & ~type.buttonFlag) | (buttonFlag & type.buttonFlag);

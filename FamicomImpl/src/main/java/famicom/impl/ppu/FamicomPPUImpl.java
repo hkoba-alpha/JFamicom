@@ -253,6 +253,11 @@ public class FamicomPPUImpl implements IFamicomPPU {
                 nameTables[2] = new NameTableImpl();
                 nameTables[3] = new NameTableImpl();
                 break;
+            case HORIZONTAL:
+                nameTables[2] = nameTables[1];
+                nameTables[3] = nameTables[1];
+                nameTables[1] = nameTables[0];
+                break;
             default:
                 nameTables[2] = nameTables[0];
                 nameTables[3] = nameTables[1];

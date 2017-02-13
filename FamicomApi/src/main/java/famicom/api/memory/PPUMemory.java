@@ -34,7 +34,7 @@ public class PPUMemory extends SplitMemoryAccessor<PPUMemory> {
             if (addr == 0x3c00) {
                 ed = 0x3f00;
             }
-            final int ix = (addr >> 18) & 3;
+            final int ix = (addr / 0x400) & 3;
             entryAccess(new DelegateAccessMemory(addr, ed) {
                 @Override
                 protected MemoryAccessor getMemoryAccessor() {

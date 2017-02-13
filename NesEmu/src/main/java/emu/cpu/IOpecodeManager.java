@@ -7,5 +7,11 @@ import famicom.api.annotation.FamicomApplication;
  */
 @FamicomApplication
 public interface IOpecodeManager {
+    public enum InterruptType {
+        NMI, IRQ
+    }
+
     IOpecode getOpecode(int code);
+
+    int interrupt(NesCpu cpu, InterruptType type);
 }

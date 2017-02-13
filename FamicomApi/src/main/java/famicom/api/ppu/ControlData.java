@@ -12,6 +12,7 @@ public abstract class ControlData {
     protected boolean spriteMask;
     protected boolean screenEnabled;
     protected boolean spriteEnabled;
+    protected boolean nmiEnabled;
     protected int scrollX;
     protected int scrollY;
     protected boolean spriteHit;
@@ -64,6 +65,10 @@ public abstract class ControlData {
         }
         return this;
     }
+    public ControlData setNmiEnabled(boolean flag) {
+        nmiEnabled = flag;
+        return this;
+    }
 
     public int getNameTableAddress() {
         return nameTableAddress;
@@ -95,6 +100,10 @@ public abstract class ControlData {
 
     public boolean isSpriteEnabled() {
         return spriteEnabled;
+    }
+
+    public boolean isNmiEnabled() {
+        return nmiEnabled;
     }
 
     public boolean isSpriteHit() {

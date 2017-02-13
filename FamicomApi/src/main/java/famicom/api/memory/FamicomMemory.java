@@ -1,15 +1,15 @@
 package famicom.api.memory;
 
-import famicom.api.annotation.Attach;
-import famicom.api.annotation.FamicomApi;
-import famicom.api.annotation.Initialize;
-import famicom.api.annotation.PostReset;
+import famicom.api.annotation.*;
 import famicom.api.apu.FamicomAPU;
 import famicom.api.apu.NoiseSound;
 import famicom.api.apu.SquareSound;
 import famicom.api.apu.TriangleSound;
+import famicom.api.pad.IFamicomPad;
+import famicom.api.pad.PadData;
 import famicom.api.ppu.IFamicomPPU;
 import famicom.api.ppu.SpriteData;
+import famicom.api.state.ScanState;
 
 /**
  * 0x0000-0x07ff RAM
@@ -33,6 +33,8 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
     protected PPUMemory ppuMemory;
     @Attach
     protected PrgMapper prgMapper;
+    @Attach
+    protected IFamicomPad famicomPad;
 
     // APU
     protected int[] squareTimer = new int[2];
@@ -40,12 +42,18 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
 
     // PPU
     protected int ppuAddr;
+    protected int ppuAddrNext;
     protected int ppuPlus = 1;
     protected int spriteAddr;
     protected boolean ppu2006;
     protected boolean ppu2005;
     protected int scrollX;
     protected int scrollY;
+    protected int scanLine;
+    protected int ppuReadBuf;
+    // PAD
+    protected boolean padFlag;
+    protected int[] padIndex = new int[2];
 
     public FamicomMemory() {
         // 0x0000-0x07ff
@@ -70,7 +78,7 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
 
             @Override
             protected int read(int offset) {
-                return super.read(offset);
+                return readPPU(offset);
             }
         });
         entryAccess(new AccessMemory(0x4000, 0x4020) {
@@ -81,7 +89,7 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
 
             @Override
             protected int read(int offset) {
-                return super.read(offset);
+                return readAPU(offset);
             }
         });
         entryAccess(new SlideAccessMemory(0x4020, 0x8000, 0x800));
@@ -102,23 +110,52 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
         spriteAddr = 0;
         ppu2006 = ppu2005 = false;
         scrollX = scrollY = 0;
+        scanLine = 0;
+        ppuAddrNext = 0;
+        ppuReadBuf = 0;
+        padIndex = new int[2];
     }
+
+    @HBlank
+    protected void hBlank(ScanState state) {
+        scanLine = state.getLineCount();
+    }
+
 
     @Override
     public int read(int addr) {
         return super.read(addr);
     }
 
-    private void writePPU(int addr, int val) {
+    protected int readPPU(int addr) {
+        if (addr == 2) {
+            ppu2005 = false;
+            return scanLine > 240 ? 0x80 : 0;
+        } else if (addr == 7) {
+            // PPUは１つ遅れて読み込まれる
+            int ret = ppuReadBuf;
+            if (ppuAddr < 0x4000) {
+                ppuReadBuf = ppuMemory.read(ppuAddr);
+            } else {
+                ppuReadBuf = 0;
+            }
+            ppuAddr += ppuPlus;
+            return ret;
+        }
+        return 0;
+    }
+
+    protected void writePPU(int addr, int val) {
         switch (addr & 7) {
             case 0:
-                if ((val & 0x80) > 0) {
+                if ((val & 4) > 0) {
                     ppuPlus = 0x20;
                 } else {
                     ppuPlus = 1;
                 }
                 famicomPPU.getControlData().setSpriteSize((val >> 5) & 1).setScreenPatternAddress((val >> 4) & 1)
-                        .setSpritePatternAddress((val >> 3) & 1).setNameTableAddress(val & 3);
+                        .setSpritePatternAddress((val >> 3) & 1).setNameTableAddress(val & 3).setNmiEnabled((val & 0x80) > 0);
+                //ppuAddrNext = (ppuAddrNext & 0xf3ff) | ((val & 3) << 10);
                 break;
             case 1:
                 famicomPPU.getControlData().setSpriteEnabled((val & 0x10) > 0)
@@ -136,30 +173,40 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
                 break;
             case 5:
                 if (ppu2005) {
-                    scrollX = val;
-                } else {
                     scrollY = val;
+                    //ppuAddrNext = (ppuAddrNext & 0xfc1f) | (val >> 3);
+                    //ppuAddrNext = (ppuAddrNext & 0x8fff) | ((val & 7) << 12);
+                } else {
+                    scrollX = val;
+                    //ppuAddrNext = (ppuAddrNext & 0xffe0) | (val >> 3);
                 }
                 ppu2005 = !ppu2005;
+                //ppu2006 = false;
                 famicomPPU.getControlData().setScroll(scrollX, scrollY);
                 break;
             case 6:
-                if (ppu2006) {
-                    ppuAddr = (ppuAddr & 0xff00) | val;
+                if (ppu2005) {
+                    ppuAddrNext = (ppuAddrNext & 0xff00) | val;
+                    ppuAddr = ppuAddrNext;
                 } else {
-                    ppuAddr = (ppuAddr & 0xff) | (val << 8);
+                    ppuAddrNext = (ppuAddrNext & 0xff) | (val << 8);
                 }
-                ppu2006 = !ppu2006;
+                ppu2005 = !ppu2005;
+                //ppu2005 = false;
                 break;
             case 7:
-                ppuMemory.write(ppuAddr, val);
+                if (ppuAddr < 0x4000) {
+                    ppuMemory.write(ppuAddr, val);
+                }
                 ppuAddr += ppuPlus;
                 break;
             default:
                 break;
         }
     }
-    private void writeSprite(int addr, int val) {
+
+    protected void writeSprite(int addr, int val) {
+        //System.out.println("Sprite[" + Integer.toString(addr, 16) + "]=" + Integer.toString(val, 16));
         SpriteData spriteData = famicomPPU.getSpriteData((addr >> 2) & 63);
         switch (addr & 3) {
             case 0:
@@ -180,7 +227,22 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
         }
     }
 
-    private void writeAPU(int addr, int val) {
+    protected int readAPU(int addr) {
+        if (addr == 0x16 || addr == 0x17) {
+            // Pad
+            int ix = addr - 0x16;
+            PadData data = famicomPad.getPad(ix);
+            int ret = data.isDown(padIndex[ix]) ? 1: 0;
+            padIndex[ix]++;
+            if (padIndex[ix] == 24) {
+                padIndex[ix] = 0;
+            }
+            return ret;
+        }
+        return 0;
+    }
+
+    protected void writeAPU(int addr, int val) {
         if (addr == 0x14) {
             // sprite dma
             int mem = val << 8;
@@ -248,6 +310,16 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
                     noiseData.setLength((val >> 3) & 0x1f);
                     break;
             }
+        } else if (addr == 0x16) {
+            // Pad
+            boolean flag = (val & 1) > 0;
+            if (padFlag && !flag) {
+                // Reset
+                padIndex[0] = padIndex[1] = 0;
+            }
+            padFlag = flag;
+        } else if (addr == 0x17) {
+            // Pad2
         }
     }
 }
