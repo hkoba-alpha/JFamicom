@@ -69,9 +69,9 @@ public abstract class NesAddressing implements IOpecode {
         while (log.length() < 30) {
             log.append(' ');
         }
-        log.append(String.format(": A:%02X X:%02X Y:%02X S:%02X P:%02X",
+        log.append(String.format(": A:%02X X:%02X Y:%02X S:%02X P:%s",
                 data.cpu.getA().getValue(), data.cpu.getX().getValue(), data.cpu.getY().getValue(),
-                data.cpu.getSP().getValue(), data.cpu.getPS().getValue()));
+                data.cpu.getSP().getValue(), data.cpu.getPS().toString()));
     }
 
     protected abstract String logOperand(OperationData data);
@@ -252,7 +252,7 @@ public abstract class NesAddressing implements IOpecode {
         return new NesAddressing(str) {
             @Override
             protected String logOperand(OperationData data) {
-                return String.format(" ($%02,X)", data.data);
+                return String.format(" ($%02X,X)", data.data);
             }
 
             @Override
@@ -294,13 +294,14 @@ public abstract class NesAddressing implements IOpecode {
         return new NesAddressing(str) {
             @Override
             protected String logOperand(OperationData data) {
-                return String.format(" $%04X", data.address);
+                return String.format(" ($%04X)", data.data);
             }
 
             @Override
             public int execute(NesCpu cpu) {
                 OperationData data = NesAddressing.getOperationData(cpu, 3);
-                int ptr = (data.memory.read(data.startPc + 1) | (data.memory.read(data.startPc + 2) << 8)) + cpu.getY().getValue();
+                int ptr = (data.memory.read(data.startPc + 1) | (data.memory.read(data.startPc + 2) << 8));
+                data.data = ptr;
                 data.address = data.memory.read(ptr) | (data.memory.read((ptr & 0xff00) | ((ptr + 1) & 0xff)) << 8);
                 cpu.log(l -> super.log(l, data));
                 int result = operation.apply(data);

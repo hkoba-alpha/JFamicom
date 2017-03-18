@@ -37,6 +37,20 @@ public class PsRegister extends NesRegister {
         return (getValue() & FLAG_N) > 0;
     }
 
+    @Override
+    public String toString() {
+        StringBuilder txt = new StringBuilder()
+                .append(n() ? 'N': '-')
+                .append(v() ? 'V': '-')
+                .append('-')
+                .append(b() ? 'B': '-')
+                .append(d() ? 'D': '-')
+                .append(i() ? 'I': '-')
+                .append(z() ? 'Z': '-')
+                .append(c() ? 'C': '-');
+        return txt.toString();
+    }
+
     public PsRegister c(boolean flag) {
         setValue((getValue() & ~FLAG_C) | (flag ? FLAG_C: 0));
         return this;

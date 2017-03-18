@@ -8,7 +8,7 @@ import famicom.api.annotation.FamicomApplication;
 @FamicomApplication
 public interface IOpecodeManager {
     public enum InterruptType {
-        NMI, IRQ
+        NMI, IRQ, BRK, RESET
     }
 
     IOpecode getOpecode(int code);

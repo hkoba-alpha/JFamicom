@@ -154,15 +154,15 @@ public class FamicomAPUImpl extends FamicomAPU {
                     for (int i = 0; i < sampleBuffer.length; i++) {
                         sampleBuffer[i] = new byte[sampleBuffer[i].length + 1];
                     }
-                    System.out.println("Too Low:" + rest + ", length=" + sampleBuffer[0].length);
+                    //System.out.println("Too Low:" + rest + ", length=" + sampleBuffer[0].length);
                 }
-                System.out.println("Timing:" + rest);
+                //System.out.println("Timing:" + rest);
                 adjustFlag = false;
                 flushOutput();
             }
         } else {
             // 大きくなりすぎた
-            System.out.println("Timing:" + rest);
+            //System.out.println("Timing:" + rest);
             adjustFlag = false;
             adjustCount++;
             if (adjustCount > 8) {
@@ -172,7 +172,7 @@ public class FamicomAPUImpl extends FamicomAPU {
                         sampleBuffer[i] = new byte[sampleBuffer[i].length - 1];
                     }
                 }
-                System.out.println("Too BIG:" + rest + ", length=" + sampleBuffer[0].length);
+                //System.out.println("Too BIG:" + rest + ", length=" + sampleBuffer[0].length);
             }
         }
     }

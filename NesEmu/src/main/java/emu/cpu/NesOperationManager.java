@@ -51,6 +51,7 @@ public class NesOperationManager implements IOpecodeManager {
         int value = (data.address < 0 ? data.cpu.getA().getValue() : data.value());
         int newVal = value << 1;
         data.cpu.getPS().c((newVal & 0x100) > 0);
+        flagNZ(newVal, data);
         if (data.address < 0) {
             data.cpu.getA().setValue(newVal & 255);
         } else {
@@ -63,6 +64,7 @@ public class NesOperationManager implements IOpecodeManager {
         int value = (data.address < 0 ? data.cpu.getA().getValue() : data.value());
         data.cpu.getPS().c((value & 1) > 0);
         int newVal = value >> 1;
+        flagNZ(newVal, data);
         if (data.address < 0) {
             data.cpu.getA().setValue(newVal & 255);
         } else {
@@ -75,6 +77,7 @@ public class NesOperationManager implements IOpecodeManager {
         int value = (data.address < 0 ? data.cpu.getA().getValue() : data.value());
         int newVal = (value << 1) | (data.cpu.getPS().c() ? 1 : 0);
         data.cpu.getPS().c((newVal & 0x100) > 0);
+        flagNZ(newVal, data);
         if (data.address < 0) {
             data.cpu.getA().setValue(newVal & 255);
         } else {
@@ -88,6 +91,7 @@ public class NesOperationManager implements IOpecodeManager {
         boolean c = (value & 1) > 0;
         int newVal = (value >> 1) | (data.cpu.getPS().c() ? 0x80 : 0);
         data.cpu.getPS().c(c);
+        flagNZ(newVal, data);
         if (data.address < 0) {
             data.cpu.getA().setValue(newVal & 255);
         } else {
@@ -104,9 +108,11 @@ public class NesOperationManager implements IOpecodeManager {
     }
 
     private int bit(NesAddressing.OperationData data, int clk) {
-        int result = data.cpu.getA().getValue() & data.value();
-        flagNZ(result, data);
-        data.cpu.getPS().v((result & 0x40) > 0);
+        int value = data.value();
+        int result = data.cpu.getA().getValue() & value;
+        data.cpu.getPS().n((value & 0x80) > 0);
+        data.cpu.getPS().z(result == 0);
+        data.cpu.getPS().v((value & 0x40) > 0);
         return clk + (data.pageCross ? 1 : 0);
     }
 
@@ -247,16 +253,17 @@ public class NesOperationManager implements IOpecodeManager {
         }));
         // BRK
         operationMap.put(0x00, NesAddressing.accumulator("BRK", d -> {
-            if (d.cpu.getPS().i()) {
-                return 7;
-            }
+            // なぜか２つ進める
             d.nextPc++;
+            d.cpu.setInterruptType(InterruptType.BRK);
+            /*
             d.cpu.getPS().b(true);
             d.cpu.push(d.nextPc >> 8);
-            d.cpu.push(d.nextPc & 0xff);
+            d.cpu.push((d.nextPc) & 0xff);
             d.cpu.push(d.cpu.getPS().getValue());
             d.nextPc = d.memory.read(0xfffe) | (d.memory.read(0xffff) << 8);
             d.cpu.getPS().i(true);
+            */
             return 7;
         }));
         // RTI
@@ -396,11 +403,11 @@ public class NesOperationManager implements IOpecodeManager {
         operationMap.put(0x8a, NesAddressing.accumulator("TXA", d -> transfer(d.cpu.getX(), d.cpu.getA(), d)));
         operationMap.put(0xa8, NesAddressing.accumulator("TAY", d -> transfer(d.cpu.getA(), d.cpu.getY(), d)));
         operationMap.put(0x98, NesAddressing.accumulator("TYA", d -> transfer(d.cpu.getY(), d.cpu.getA(), d)));
-        operationMap.put(0x9a, NesAddressing.accumulator("TXS", d -> transfer(d.cpu.getSP(), d.cpu.getX(), d)));
-        operationMap.put(0xba, NesAddressing.accumulator("TSX", d -> {
+        operationMap.put(0x9a, NesAddressing.accumulator("TXS", d -> {
             d.cpu.getSP().setValue(d.cpu.getX().getValue());
             return 2;
         }));
+        operationMap.put(0xba, NesAddressing.accumulator("TSX", d -> transfer(d.cpu.getSP(), d.cpu.getX(), d)));
         // stack
         operationMap.put(0x48, NesAddressing.accumulator("PHA", d -> {
             d.cpu.push(d.cpu.getA().getValue());
@@ -440,15 +447,20 @@ public class NesOperationManager implements IOpecodeManager {
                 cpu.getPC().setValue(cpu.getMemory().read(0xfffa) | (cpu.getMemory().read(0xfffb) << 8));
                 return 7;
             case IRQ:
-                if (!cpu.getPS().i()) {
-                    cpu.getPS().b(false);
-                    cpu.push(pc >> 8);
-                    cpu.push(pc & 0xff);
-                    cpu.push(cpu.getPS().getValue());
-                    cpu.getPS().i(true);
-                    cpu.getPC().setValue(cpu.getMemory().read(0xfffe) | (cpu.getMemory().read(0xffff) << 8));
-                    return 8;
-                }
+                cpu.getPS().b(false);
+                cpu.push(pc >> 8);
+                cpu.push(pc & 0xff);
+                cpu.push(cpu.getPS().getValue());
+                cpu.getPS().i(true);
+                cpu.getPC().setValue(cpu.getMemory().read(0xfffe) | (cpu.getMemory().read(0xffff) << 8));
+                return 7;
+            case BRK:
+                cpu.getPS().b(true);
+                cpu.push(pc >> 8);
+                cpu.push(pc & 0xff);
+                cpu.push(cpu.getPS().getValue());
+                cpu.getPS().i(true);
+                cpu.getPC().setValue(cpu.getMemory().read(0xfffe) | (cpu.getMemory().read(0xffff) << 8));
                 break;
             default:
                 break;

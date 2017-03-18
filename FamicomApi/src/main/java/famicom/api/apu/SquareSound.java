@@ -135,8 +135,10 @@ public class SquareSound {
      */
     public SquareSound setEnvelope(int duty, boolean loopFlag, int period) {
         this.loopFlag = loopFlag;
-        nextEnv = new EnvelopeData(period + 1);
-        volumeValue = 0;
+        // timerを変更しなくても変わるらしい
+        //nextEnv = new EnvelopeData(period + 1);
+        envData = new EnvelopeData(period + 1);
+        //volumeValue = 15;
         dutyValue = duty;
         return this;
     }
@@ -214,7 +216,7 @@ public class SquareSound {
      * @return
      */
     public boolean isPlaying() {
-        return false;
+        return lengthCounter > 0;
     }
 
     public SquareSound setEnabled(boolean flag) {

@@ -22,7 +22,7 @@ import famicom.api.state.ScanState;
  * 0x8000-0xffff PRG ROM
  * Created by hkoba on 2017/01/04.
  */
-@FamicomApi
+@FamicomLibrary(priority = 0)
 public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
     @Attach
     protected FamicomAPU famicomAPU;
@@ -130,7 +130,11 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
     protected int readPPU(int addr) {
         if (addr == 2) {
             ppu2005 = false;
-            return scanLine > 240 ? 0x80 : 0;
+            int ret = scanLine >= 240 ? 0x80 : 0;
+            if (famicomPPU.getSpriteData(0).getY() < scanLine) {
+                ret |= 0x40;
+            }
+            return ret;
         } else if (addr == 7) {
             // PPUは１つ遅れて読み込まれる
             int ret = ppuReadBuf;
@@ -196,6 +200,7 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
                 break;
             case 7:
                 if (ppuAddr < 0x4000) {
+                    //System.out.printf("PPU[%04X]=%02X\n", ppuAddr, val);
                     ppuMemory.write(ppuAddr, val);
                 }
                 ppuAddr += ppuPlus;
@@ -228,11 +233,20 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
     }
 
     protected int readAPU(int addr) {
-        if (addr == 0x16 || addr == 0x17) {
+        if (addr == 0x15) {
+            // サウンド状態
+            int flag = famicomAPU.isIrqEnabled() ? 0x40: 0;
+            int ret = (famicomAPU.getSquare(0).isPlaying() ? 1: 0)
+                    | (famicomAPU.getSquare(1).isPlaying() ? 2:0)
+                    | (famicomAPU.getTriangle().isPlaying() ? 4: 0)
+                    | (famicomAPU.getNoise().isPlaying() ? 8: 0) | flag;
+            famicomAPU.clearFrameIrq();
+            return ret;
+        } else if (addr == 0x16 || addr == 0x17) {
             // Pad
             int ix = addr - 0x16;
             PadData data = famicomPad.getPad(ix);
-            int ret = data.isDown(padIndex[ix]) ? 1: 0;
+            int ret = data.isDown(padIndex[ix]) ? 1 : 0;
             padIndex[ix]++;
             if (padIndex[ix] == 24) {
                 padIndex[ix] = 0;
@@ -310,16 +324,26 @@ public class FamicomMemory extends SplitMemoryAccessor<FamicomMemory> {
                     noiseData.setLength((val >> 3) & 0x1f);
                     break;
             }
+        } else if (addr == 0x15) {
+            // 音声チャネル制御
+            famicomAPU.getSquare(0).setEnabled((val & 1) > 0);
+            famicomAPU.getSquare(1).setEnabled((val & 2) > 0);
+            famicomAPU.getTriangle().setEnabled((val & 4) > 0);
+            famicomAPU.getNoise().setEnabled((val & 8) > 0);
+            famicomAPU.getDelta().setEnabled((val & 16) > 0);
         } else if (addr == 0x16) {
             // Pad
             boolean flag = (val & 1) > 0;
             if (padFlag && !flag) {
                 // Reset
                 padIndex[0] = padIndex[1] = 0;
+                famicomPad.getPad(0).reset();
+                famicomPad.getPad(1).reset();
             }
             padFlag = flag;
         } else if (addr == 0x17) {
-            // Pad2
+            // APU
+            famicomAPU.setStepMode((val & 0x80) == 0 ? FamicomAPU.StepMode.MODE_4STEP: FamicomAPU.StepMode.MODE_5STEP, (val & 0x40) == 0);
         }
     }
 }

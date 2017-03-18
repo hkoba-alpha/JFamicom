@@ -1,5 +1,6 @@
 package famicom.api.memory.file;
 
+import famicom.api.annotation.FamicomRom;
 import famicom.api.memory.AbstractMemoryFile;
 
 import java.io.IOException;
@@ -12,7 +13,11 @@ import java.util.Map;
  * Created by hkoba on 2017/01/08.
  */
 public class NesRomFile extends AbstractMemoryFile<NesRomFile> {
-    private byte[] memoryData;
+    protected byte[] memoryData;
+
+    protected int mapperType;
+
+    protected FamicomRom.MirrorMode mirrorMode;
 
     @Override
     protected void readFile(InputStream inputStream) {
@@ -28,6 +33,15 @@ public class NesRomFile extends AbstractMemoryFile<NesRomFile> {
             int chrSize = header[5];
             int inst = 0;
             int prom = 0;
+            int mirror = header[6] & 15;
+            if ((mirror & 8) > 0) {
+                mirrorMode = ((mirror & 1) > 0 ? FamicomRom.MirrorMode.FOUR_VERTICAL: FamicomRom.MirrorMode.FOUR_HORIZONTAL);
+            } else if ((mirror & 1) > 0) {
+                mirrorMode = FamicomRom.MirrorMode.VERTICAL;
+            } else {
+                mirrorMode = FamicomRom.MirrorMode.HORIZONTAL;
+            }
+            mapperType = ((header[6] >> 4) & 15) | (header[7] & 0xf0);
             if ((header[6] & 4) > 0) {
                 trainer = 512;
             }
@@ -50,6 +64,10 @@ public class NesRomFile extends AbstractMemoryFile<NesRomFile> {
     @Override
     public byte[] getData() {
         return memoryData;
+    }
+
+    public FamicomRom.MirrorMode getMirrorMode() {
+        return mirrorMode;
     }
 
     public void printText(PrintStream stream, String patternText, int patternSize) {
@@ -97,5 +115,9 @@ public class NesRomFile extends AbstractMemoryFile<NesRomFile> {
                 stream.println(".memory");
             }
         });
+    }
+
+    public int getMapperType() {
+        return mapperType;
     }
 }
