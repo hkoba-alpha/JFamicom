@@ -34,10 +34,15 @@ public class FamicomAPU {
     protected TriangleSound triangleSound;
     protected NoiseSound noiseSound;
     protected DeltaSound deltaSound;
+    protected boolean irqFlag;
+    protected boolean irqEnabled;
 
-    public FamicomAPU setStepMode(StepMode mode) {
+    public FamicomAPU setStepMode(StepMode mode, boolean irq) {
+        irqEnabled = (mode == StepMode.MODE_4STEP && irq);
+        irqFlag = false;
         stepMode = mode;
         sequenceCounter = frameCounter = 0;
+        System.out.println("APU:" + mode + ", irq=" + irq);
         return this;
     }
 
@@ -75,10 +80,12 @@ public class FamicomAPU {
     @PostReset
     protected void reset() {
         frameCounter = 0;
+        stepMode = StepMode.MODE_5STEP;
         squareSound[0].setEnabled(false);
         squareSound[1].setEnabled(false);
         triangleSound.setEnabled(false);
         noiseSound.setEnabled(false);
+        irqFlag = irqEnabled = false;
     }
 
     @HBlank
@@ -95,6 +102,7 @@ public class FamicomAPU {
                 if (stepMode == StepMode.MODE_4STEP) {
                     lFlag = ((sequenceCounter & 1) == 1);
                     eFlag = true;
+                    irqFlag = (irqEnabled && ((sequenceCounter & 3) == 3));
                 } else {
                     lFlag = (((sequenceCounter % 5) & 1) == 0);
                     eFlag = ((sequenceCounter % 5) < 4);
@@ -126,6 +134,22 @@ public class FamicomAPU {
         if (frameCounter == ExecuteManager.SCAN_LINE_SIZE) {
             frameCounter = 0;
         }
+    }
+
+    /**
+     * フレームシーケンサIRQ
+     * @return
+     */
+    public boolean isIrqEnabled() {
+        return irqEnabled;
+    }
+
+    public boolean isFrameIrq() {
+        return irqFlag;
+    }
+    public FamicomAPU clearFrameIrq() {
+        irqFlag = false;
+        return this;
     }
 
     protected void flushOutput() {

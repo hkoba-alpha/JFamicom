@@ -16,7 +16,8 @@ public @interface FamicomRom {
         HORIZONTAL,
         VERTICAL,
         FOUR_HORIZONTAL,
-        FOUR_VERTICAL
+        FOUR_VERTICAL,
+        ONE_SCREEN
     }
 
 

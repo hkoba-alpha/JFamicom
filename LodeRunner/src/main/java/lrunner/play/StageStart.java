@@ -2,6 +2,8 @@ package lrunner.play;
 
 import famicom.api.pad.IFamicomPad;
 import famicom.api.ppu.IFamicomPPU;
+import lrunner.LodeRunnerRom;
+import lrunner.apu.PsgSoundData;
 import lrunner.data.StageData;
 
 import java.awt.*;
@@ -23,9 +25,9 @@ public class StageStart implements PlayBase {
 	public StageStart(StageData data, PlayData play) {
 		this(data, play, ScrollType.ViewStart);
 		/*
-		InputStream is = SampleROM.class.getResourceAsStream("/sound2.txt");
-		SampleROM.soundManager.removeSequencer(0);
-		SampleROM.soundManager.addSequencer(0, new PsgSoundData(is), true);
+		InputStream is = LodeRunnerRom.class.getResourceAsStream("/sound2.txt");
+		LodeRunnerRom.soundManager.removeSequencer(0);
+		LodeRunnerRom.soundManager.addSequencer(0, new PsgSoundData(is), true);
 		*/
 	}
 

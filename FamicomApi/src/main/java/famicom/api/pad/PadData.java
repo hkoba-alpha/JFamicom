@@ -19,6 +19,7 @@ public class PadData {
         ButtonType(int flag) {
             buttonFlag = flag;
         }
+
         public int getButtonFlag() {
             return buttonFlag;
         }
@@ -35,9 +36,25 @@ public class PadData {
      */
     protected int readFlag;
 
+    /**
+     * 押した状態をリセットする
+     * @return
+     */
+    public PadData reset() {
+        readFlag = buttonFlag;
+        return this;
+    }
+
+    public boolean isDown(int padNum) {
+        int flag = 1 << padNum;
+        boolean ret = ((readFlag | buttonFlag) & flag) > 0;
+        readFlag &= ~flag;
+        return ret;
+    }
+
     public boolean isDown(ButtonType type) {
-        boolean ret = (readFlag & type.buttonFlag) > 0;
-        readFlag = (readFlag & ~type.buttonFlag) | (buttonFlag & type.buttonFlag);
+        boolean ret = ((readFlag | buttonFlag) & type.buttonFlag) > 0;
+        readFlag &= ~type.buttonFlag;
         return ret;
     }
 
@@ -52,6 +69,7 @@ public class PadData {
         readFlag = (readFlag & 0xf0) | (buttonFlag & 0xf);
         return ret;
     }
+
     public int getStick() {
         int ret = readFlag & 0xf0;
         readFlag = (readFlag & 0xf) | (buttonFlag & 0xf0);

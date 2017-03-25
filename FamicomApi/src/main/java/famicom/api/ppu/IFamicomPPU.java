@@ -1,6 +1,7 @@
 package famicom.api.ppu;
 
 import famicom.api.annotation.FamicomApi;
+import famicom.api.annotation.FamicomRom;
 
 /**
  * Created by hkoba on 2017/01/01.
@@ -12,4 +13,5 @@ public interface IFamicomPPU {
     NameTable getNameTable(int index);
     PatternTable getPatternTable(int index);
     PaletteTable getPaletteTable();
+    IFamicomPPU setMirrorMode(FamicomRom.MirrorMode mode);
 }

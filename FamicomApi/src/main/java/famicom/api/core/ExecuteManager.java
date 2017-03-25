@@ -3,8 +3,11 @@ package famicom.api.core;
 import famicom.api.annotation.Event;
 import famicom.api.annotation.FamicomRom;
 import famicom.api.state.GameState;
+import famicom.api.state.PowerControl;
 import famicom.api.state.ScanState;
+import famicom.api.state.StateFile;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -65,11 +68,77 @@ public class ExecuteManager {
         }
     }
 
+    private class PowerControlImpl extends PowerControl {
+        public boolean isReset() {
+            return resetFlag;
+        }
+
+        public boolean isPowerOff() {
+            return offFlag;
+        }
+
+        public void init() {
+            resetFlag = false;
+            offFlag = false;
+        }
+    }
+
+
+    private class StateFileImpl extends StateFile {
+        private File dataFolder;
+
+        private StateFileImpl() {
+            dataFolder = new File(".state/" + romClass.getName());
+        }
+
+        @Override
+        public void setSubKey(String key) {
+            super.setSubKey(key);
+            load();
+        }
+
+        private File getFile() {
+            if (super.subFolder != null) {
+                return new File(dataFolder, subFolder);
+            }
+            return new File(dataFolder, "state.dat");
+        }
+
+        private void load() {
+            try (FileInputStream inputStream = new FileInputStream(getFile())) {
+                super.saveData = (Map) new ObjectInputStream(inputStream).readObject();
+            } catch (FileNotFoundException e) {
+                // 無視
+                super.saveData.clear();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void save() {
+            if (super.updateFlag) {
+                File file = getFile();
+                file.getParentFile().mkdirs();
+                try (FileOutputStream outputStream = new FileOutputStream(file)) {
+                    new ObjectOutputStream(outputStream).writeObject(super.saveData);
+                    super.updateFlag = false;
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
     private Map<String, Object> eventParam = new HashMap<>();
 
     private GameStateImpl gameState;
     private ScanStateImpl scanState;
+    private PowerControlImpl powerControl;
+    private StateFileImpl stateFile;
 
     private ExecuteManager() {
         eventParam.put("byte", new Byte((byte) 0));
@@ -86,7 +155,7 @@ public class ExecuteManager {
         this.romClass = romClass;
         List<String> packages = new ArrayList<>();
         famicomRom = romClass.getAnnotation(FamicomRom.class);
-        for (String pkg: famicomRom.packages()) {
+        for (String pkg : famicomRom.packages()) {
             packages.add(pkg);
         }
         if (packages.size() == 0) {
@@ -100,8 +169,13 @@ public class ExecuteManager {
     private ExecuteManager initGame(boolean initFlag) {
         gameState = new GameStateImpl(famicomRom.initState());
         scanState = new ScanStateImpl();
+        powerControl = new PowerControlImpl();
+        stateFile = new StateFileImpl();
         eventParam.put(GameState.class.getName(), gameState);
         eventParam.put(ScanState.class.getName(), scanState);
+        eventParam.put(PowerControl.class.getName(), powerControl);
+        eventParam.put(StateFile.class.getName(), stateFile);
+        stateFile.load();
         if (initFlag) {
             EventManager.getInstance().dispatchEvent(Event.EventType.INITIALIZE, "", eventParam);
         }
@@ -115,10 +189,14 @@ public class ExecuteManager {
         while (scanState.scanLine()) {
             // 何もしない
         }
+        stateFile.save();
+        if (powerControl.isReset() || powerControl.isPowerOff()) {
+            reset();
+        }
         return this;
     }
 
-    public ExecuteManager reset() {
+    private ExecuteManager reset() {
         EventManager.getInstance().dispatchEvent(Event.EventType.PRE_RESET, "", eventParam);
         return initGame(false);
     }
@@ -126,6 +204,7 @@ public class ExecuteManager {
     public FamicomRom getFamicomRom() {
         return famicomRom;
     }
+
     public Class<?> getRomClass() {
         return romClass;
     }

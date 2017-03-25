@@ -150,7 +150,7 @@ public class LodeRunnerRom {
         famicomAPU.getNoise().setEnabled(true);
         //famicomAPU.getSquare(0).setEnabled(true).setVolume(0, true, 15).setTimer(1, 1200);
         PsgSoundData startSound = new PsgSoundData(
-                StartPlay.class.getResourceAsStream("/sound6.txt"));
+                StartPlay.class.getResourceAsStream("/sound5.txt"));
         soundManager.addSequencer(0, startSound, true);
     }
 

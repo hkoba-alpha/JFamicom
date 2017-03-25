@@ -81,17 +81,51 @@ public class FamicomPPUImpl implements IFamicomPPU {
 
         @Override
         public ControlData setNameTableAddress(int nameTableAddress) {
-            switch (ExecuteManager.getInstance().getFamicomRom().mirror()) {
+            nameTableIndex = nameTableAddress;
+            switch (nameTableAddress) {
+                case 1:
+                    screenTable[0] = nameTables[1];
+                    screenTable[1] = nameTables[0];
+                    screenTable[2] = nameTables[3];
+                    screenTable[3] = nameTables[2];
+                    break;
+                case 2:
+                    screenTable[0] = nameTables[2];
+                    screenTable[1] = nameTables[3];
+                    screenTable[2] = nameTables[0];
+                    screenTable[3] = nameTables[1];
+                    break;
+                case 3:
+                    screenTable[0] = nameTables[3];
+                    screenTable[1] = nameTables[2];
+                    screenTable[2] = nameTables[1];
+                    screenTable[3] = nameTables[0];
+                    break;
+                default:
+                    screenTable[0] = nameTables[0];
+                    screenTable[1] = nameTables[1];
+                    screenTable[2] = nameTables[2];
+                    screenTable[3] = nameTables[3];
+                    break;
+            }
+            /*
+            switch (mirrorMode) {
                 case FOUR_HORIZONTAL:
                 case HORIZONTAL:
                     screenTable[1] = nameTables[2];
                     screenTable[2] = nameTables[1];
                     break;
                 default:
-                    screenTable[1] = nameTables[1];
-                    screenTable[2] = nameTables[2];
+                    if (nameTableAddress == 1) {
+                        screenTable[1] = nameTables[2];
+                        screenTable[2] = nameTables[1];
+                    } else {
+                        screenTable[1] = nameTables[1];
+                        screenTable[2] = nameTables[2];
+                    }
                     break;
             }
+            */
             return super.setNameTableAddress(nameTableAddress);
         }
     }
@@ -236,6 +270,8 @@ public class FamicomPPUImpl implements IFamicomPPU {
     private NameTableImpl[] nameTables = new NameTableImpl[4];
     private NameTableImpl[] screenTable = new NameTableImpl[4];
     private PaletteTableImpl paletteTable;
+    private FamicomRom.MirrorMode mirrorMode;
+    private int nameTableIndex;
 
     @Initialize
     @PreReset
@@ -245,25 +281,12 @@ public class FamicomPPUImpl implements IFamicomPPU {
         for (int i = 0; i < spriteDataList.length; i++) {
             spriteDataList[i] = new SpriteDataImpl();
         }
+        nameTableIndex = 0;
         nameTables[0] = new NameTableImpl();
-        nameTables[1] = new NameTableImpl();
-        switch (ExecuteManager.getInstance().getFamicomRom().mirror()) {
-            case FOUR_HORIZONTAL:
-            case FOUR_VERTICAL:
-                nameTables[2] = new NameTableImpl();
-                nameTables[3] = new NameTableImpl();
-                break;
-            default:
-                nameTables[2] = nameTables[0];
-                nameTables[3] = nameTables[1];
-                break;
-        }
-        screenTable[0] = nameTables[0];
-        screenTable[1] = nameTables[1];
-        screenTable[2] = nameTables[2];
-        screenTable[3] = nameTables[3];
+        nameTables[3] = new NameTableImpl();
         controlData = new ControlDataImpl();
         paletteTable = new PaletteTableImpl();
+        setMirrorMode(ExecuteManager.getInstance().getFamicomRom().mirror());
         controlData.setNameTableAddress(0);
     }
 
@@ -365,5 +388,36 @@ public class FamicomPPUImpl implements IFamicomPPU {
     @Override
     public PaletteTable getPaletteTable() {
         return paletteTable;
+    }
+
+    @Override
+    public IFamicomPPU setMirrorMode(FamicomRom.MirrorMode mode) {
+        mirrorMode = mode;
+        switch (mode) {
+            case FOUR_HORIZONTAL:
+            case FOUR_VERTICAL:
+                if (nameTables[1] == null) {
+                    nameTables[1] = new NameTableImpl();
+                    nameTables[2] = new NameTableImpl();
+                }
+                break;
+            case HORIZONTAL:
+                nameTables[1] = nameTables[0];
+                nameTables[2] = nameTables[3];
+                break;
+            default:
+                nameTables[1] = nameTables[3];
+                nameTables[2] = nameTables[0];
+                break;
+        }
+        screenTable[0] = nameTables[0];
+        screenTable[1] = nameTables[1];
+        screenTable[2] = nameTables[2];
+        screenTable[3] = nameTables[3];
+        if (mode == FamicomRom.MirrorMode.ONE_SCREEN) {
+            screenTable[1] = screenTable[2] = screenTable[3] = nameTables[0];
+        }
+        this.controlData.setNameTableAddress(nameTableIndex);
+        return this;
     }
 }

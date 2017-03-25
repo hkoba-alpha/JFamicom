@@ -204,8 +204,8 @@ public class ComponentManager {
         if ("file".equals(root.getProtocol())) {
             File topFile = new File(root.getFile());
             String pkg = cls.getPackage().getName();
-            String[] lst = pkg.split("¥¥.");
-            for (int i = lst.length; i > 0; i--) {
+            int pkgLen = pkg.length() - pkg.replaceAll("\\.", "").length();
+            for (int i = 0; i <= pkgLen; i++) {
                 topFile = topFile.getParentFile();
             }
             try {
