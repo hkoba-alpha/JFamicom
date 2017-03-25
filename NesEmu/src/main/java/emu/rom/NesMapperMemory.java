@@ -150,6 +150,9 @@ public class NesMapperMemory extends PrgMapper {
                 }
                 // chr low
                 int page = reg & 0xf;
+                if ((reg & 0x10) > 0) {
+                    page += chrMapper.getBankSize();
+                }
                 if (chr4k) {
                     // 4k
                     for (int i = 0; i < 4; i++) {
@@ -164,6 +167,9 @@ public class NesMapperMemory extends PrgMapper {
             } else if (addr < 0xe000) {
                 // chr high
                 int page = reg & 0xf;
+                if ((reg & 0x10) > 0) {
+                    page += chrMapper.getBankSize();
+                }
                 if (chr4k) {
                     // 4k
                     for (int i = 0; i < 4; i++) {

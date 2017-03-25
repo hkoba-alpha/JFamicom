@@ -19,6 +19,8 @@ public class NesRomFile extends AbstractMemoryFile<NesRomFile> {
 
     protected FamicomRom.MirrorMode mirrorMode;
 
+    protected boolean backupEnabled;
+
     @Override
     protected void readFile(InputStream inputStream) {
         byte[] header = new byte[16];
@@ -56,6 +58,7 @@ public class NesRomFile extends AbstractMemoryFile<NesRomFile> {
                 entryName("CHR" + i, addr, 0x2000);
                 addr += 0x2000;
             }
+            backupEnabled = (header[6] & 2) > 0;
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -119,5 +122,9 @@ public class NesRomFile extends AbstractMemoryFile<NesRomFile> {
 
     public int getMapperType() {
         return mapperType;
+    }
+
+    public boolean isBackupEnabled() {
+        return backupEnabled;
     }
 }

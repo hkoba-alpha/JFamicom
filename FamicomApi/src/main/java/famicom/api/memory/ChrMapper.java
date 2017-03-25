@@ -43,6 +43,10 @@ public class ChrMapper {
         return this;
     }
 
+    public int getBankSize() {
+        return bankDataList.size();
+    }
+
     /**
      * 初期化時に設定されている
      *

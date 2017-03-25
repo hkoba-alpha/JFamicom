@@ -1,8 +1,7 @@
 package famicom.api.state;
 
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import javax.xml.bind.DatatypeConverter;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,6 +11,15 @@ import java.util.Map;
 public class StateFile {
     protected Map<String, byte[]> saveData = new HashMap<>();
     protected boolean updateFlag;
+    protected String subFolder;
+
+    public void setSubKey(String key) {
+        if (key == null) {
+            subFolder = null;
+            return;
+        }
+        subFolder = DatatypeConverter.printHexBinary(key.getBytes());
+    }
 
     public StateFile clearData(String name) {
         if (saveData.containsKey(name)) {
@@ -30,11 +38,27 @@ public class StateFile {
     public ObjectOutputStream getOutput(String name) {
         updateFlag = true;
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream() {
-
+            @Override
+            public void close() throws IOException {
+                saveData.put(name, super.toByteArray());
+                updateFlag = true;
+            }
         };
-        return null;
+        try {
+            return new ObjectOutputStream(outputStream);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
     public ObjectInputStream getInput(String name) {
+        if (saveData.containsKey(name)) {
+            try {
+                return new ObjectInputStream(new ByteArrayInputStream(saveData.get(name)));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         return null;
     }
 }
